@@ -34,7 +34,7 @@ export default function TripInputForm({ onTripSubmit }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-md mx-auto p-4 bg-gray-500 rounded-lg shadow-md space-y-4"
+      className="max-w-md mx-auto p-4 bg-gray-500 rounded-3xl shadow-md space-y-6 "
     >
       <input
         type="text"
