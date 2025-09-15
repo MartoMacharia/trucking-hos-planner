@@ -29,7 +29,7 @@ load_dotenv()
 SECRET_KEY = 'django-insecure-g6)4de^vi-0a6%v072mk=%drifc-sdp($bhu-0surdyr4#$amq'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -67,6 +67,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://trucking-hos-planner.vercel.app"
     ]
+
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
     r"^https://.*\.railway\.app$",
