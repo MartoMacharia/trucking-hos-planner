@@ -30,23 +30,30 @@ export async function geocodeAddress(query) {
  * @returns {Promise<Array<[number, number]>>} array of [lat, lng] suitable for Leaflet
  */
 export async function getRoutePolyline(coords, profile = "driving-car") {
-  if (!ORS_API_KEY) throw new Error("ORS API key missing");
-  if (!Array.isArray(coords) || coords.length < 2) {
-    throw new Error("At least two coordinates are required");
+  const apiKey = process.env.REACT_APP_ORS_API_KEY; // Access the API key
+  if (!apiKey) {
+    throw new Error("ORS API key is missing. Check your .env.local file.");
   }
 
-  const url = `${BASE_URL}/v2/directions/${profile}?api_key=${ORS_API_KEY}&geometry_format=geojson&instructions=false`;
-  const res = await fetch(url, {
+  const url = `https://api.openrouteservice.org/v2/directions/${profile}/geojson`;
+
+  const body = {
+    coordinates: coords,
+  };
+
+  const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ coordinates: coords }),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: apiKey,
+    },
+    body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`ORS directions failed: ${res.status} ${text}`);
+
+  if (!response.ok) {
+    throw new Error(`ORS API error: ${response.statusText}`);
   }
-  const json = await res.json();
-  const line = json?.routes?.[0]?.geometry?.coordinates || [];
-  // Convert [lng, lat] -> [lat, lng]
-  return line.map(([lng, lat]) => [lat, lng]);
+
+  const data = await response.json();
+  return data.features[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
 }

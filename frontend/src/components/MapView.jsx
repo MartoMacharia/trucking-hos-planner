@@ -35,9 +35,9 @@ export default function MapView({ tripData }) {
   useEffect(() => {
     const buildRoute = async () => {
       const points = [];
-      if (currentCoords) points.push(currentCoords);
-      if (pickupCoords) points.push(pickupCoords);
-      if (dropoffCoords) points.push(dropoffCoords);
+      if (currentCoords) points.push([currentCoords[0], currentCoords[1]]);
+      if (pickupCoords) points.push([pickupCoords[0], pickupCoords[1]]);
+      if (dropoffCoords) points.push([dropoffCoords[0], dropoffCoords[1]]);
 
       // If fewer than 2 points, nothing to draw
       if (points.length < 2) {
@@ -49,14 +49,10 @@ export default function MapView({ tripData }) {
       try {
         const poly = await getRoutePolyline(points, "driving-hgv");
         setRouteCoordinates(poly);
-        return;
       } catch (e) {
-        console.warn("ORS directions failed; using straight-line fallback:", e.message);
+        console.warn("ORS directions failed:", e.message);
+        setRouteCoordinates(points.map(([lng, lat]) => [lat, lng])); // Fallback
       }
-
-      // Fallback: straight segments connecting the points in order
-      const fallback = points.map(([lng, lat]) => [lat, lng]);
-      setRouteCoordinates(fallback);
     };
     buildRoute();
   }, [currentCoords, pickupCoords, dropoffCoords]);
@@ -74,6 +70,10 @@ export default function MapView({ tripData }) {
       map.fitBounds(bounds.pad(0.2));
     }
   }, [routeCoordinates, currentCoords, pickupCoords, dropoffCoords]);
+
+  useEffect(() => {
+    console.log("Route coordinates:", routeCoordinates);
+  }, [routeCoordinates]);
 
   return (
     <MapContainer
