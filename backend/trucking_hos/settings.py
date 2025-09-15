@@ -64,7 +64,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://your-app.vercel.app",
+    "https://trucking-hos-planner.vercel.app"
 ]
 
 CORS_ALLOW_METHODS = [
