@@ -62,9 +62,9 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://trucking-hos-planner.vercel.app"
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.railway\.app$",
 ]
 
 CORS_ALLOW_METHODS = [
