@@ -8,6 +8,9 @@ from .serializers import (
     TripRequestSerializer, 
     TripResponseSerializer
 )
+from .services.route_calculator import RouteCalculator
+from .services.hos_calculator import HOSCalculator
+from .services.log_generator import LogGenerator
 
 class HealthCheckView(APIView):
     @extend_schema(
@@ -57,49 +60,32 @@ class CalculateTripView(APIView):
         serializer = TripRequestSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
-            
-            # Mock response for testing
+
+            # Calculate route (still mock distances/points in RouteCalculator)
+            route_calc = RouteCalculator()
+            route = route_calc.calculate(
+                data['current_location'],
+                data['pickup_location'],
+                data['dropoff_location']
+            )
+
+            # Plan HOS based on route total distance
+            hos = HOSCalculator()
+            hos_plan = hos.plan_trip(route_data=route, current_cycle_hours=data['current_cycle_hours'])
+
+            # Generate ELD log sheets as base64 PNGs
+            log_gen = LogGenerator()
+            logs = log_gen.generate_logs(hos_plan)
+
             response_data = {
-                'route': {
-                    'points': [
-                        {'lat': 40.7128, 'lng': -74.0060},
-                        {'lat': 39.9526, 'lng': -75.1652},
-                        {'lat': 38.9072, 'lng': -77.0369}
-                    ],
-                    'total_distance': 225
-                },
-                'stops': [
-                    {
-                        'type': 'pickup',
-                        'mile_marker': 95,
-                        'duration': 60,
-                        'description': 'Pickup at Philadelphia, PA',
-                        'location': {'lat': 39.9526, 'lng': -75.1652}
-                    },
-                    {
-                        'type': 'dropoff',
-                        'mile_marker': 225,
-                        'duration': 60,
-                        'description': 'Dropoff at Washington, DC',
-                        'location': {'lat': 38.9072, 'lng': -77.0369}
-                    }
-                ],
-                'log_sheets': [
-                    {
-                        'day': 1,
-                        'date': '2024-01-01',
-                        'driving_hours': 4.1,
-                        'on_duty_hours': 2,
-                        'off_duty_hours': 17.9,
-                        'sleeper_berth_hours': 0,
-                        'log_image': 'base64_placeholder'
-                    }
-                ],
-                'total_distance': 225,
-                'total_time': 6.1,
-                'fuel_stops': []
+                'route': route,
+                'stops': hos_plan['stops'],
+                'log_sheets': logs,
+                'total_distance': route['total_distance'],
+                'total_time': hos_plan['total_time'],
+                'fuel_stops': hos_plan['fuel_stops'],
             }
-            
+
             return Response(response_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

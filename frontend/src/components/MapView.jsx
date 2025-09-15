@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -8,7 +8,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { geocodeAddress } from "../services/orsService"; // Import geocodeAddress from orsService.js
+import { getRoutePolyline } from "../services/orsService";
 
 // Fix for missing marker icons using Leaflet's default assets
 import markerIconUrl from "leaflet/dist/images/marker-icon.png";
@@ -24,36 +24,62 @@ const markerIcon = L.icon({
 });
 
 export default function MapView({ tripData }) {
-  const { currentCoords, pickupCoords, dropoffCoords } = tripData;
+  const { currentCoords, pickupCoords, dropoffCoords } = tripData || {};
   const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const mapRef = useRef(null);
 
-  // Default center (current location)
   const center = currentCoords
-    ? [currentCoords[1], currentCoords[0]] // [lat, lng]
-    : [39.5, -98.35]; // USA center fallback
+    ? [currentCoords[1], currentCoords[0]]
+    : [39.5, -98.35];
 
   useEffect(() => {
-    const fetchRoute = async () => {
-      if (currentCoords && pickupCoords && dropoffCoords) {
-        try {
-          // Fetch route using geocodeAddress from orsService.js
-          const route = await geocodeAddress(
-            `${currentCoords[0]},${currentCoords[1]}`
-          );
-          setRouteCoordinates(route.map((coord) => [coord[1], coord[0]])); // Convert [lng, lat] to [lat, lng]
-        } catch (error) {
-          console.error("Error fetching route:", error);
-        }
-      }
-    };
+    const buildRoute = async () => {
+      const points = [];
+      if (currentCoords) points.push(currentCoords);
+      if (pickupCoords) points.push(pickupCoords);
+      if (dropoffCoords) points.push(dropoffCoords);
 
-    fetchRoute();
+      // If fewer than 2 points, nothing to draw
+      if (points.length < 2) {
+        setRouteCoordinates([]);
+        return;
+      }
+
+      // Try ORS directions for 2+ points
+      try {
+        const poly = await getRoutePolyline(points, "driving-hgv");
+        setRouteCoordinates(poly);
+        return;
+      } catch (e) {
+        console.warn("ORS directions failed; using straight-line fallback:", e.message);
+      }
+
+      // Fallback: straight segments connecting the points in order
+      const fallback = points.map(([lng, lat]) => [lat, lng]);
+      setRouteCoordinates(fallback);
+    };
+    buildRoute();
   }, [currentCoords, pickupCoords, dropoffCoords]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const boundsPoints = [];
+    if (currentCoords) boundsPoints.push([currentCoords[1], currentCoords[0]]);
+    if (pickupCoords) boundsPoints.push([pickupCoords[1], pickupCoords[0]]);
+    if (dropoffCoords) boundsPoints.push([dropoffCoords[1], dropoffCoords[0]]);
+    routeCoordinates.forEach((p) => boundsPoints.push(p));
+    if (boundsPoints.length > 0) {
+      const bounds = L.latLngBounds(boundsPoints);
+      map.fitBounds(bounds.pad(0.2));
+    }
+  }, [routeCoordinates, currentCoords, pickupCoords, dropoffCoords]);
 
   return (
     <MapContainer
       center={center}
       zoom={5}
+      whenCreated={(map) => (mapRef.current = map)}
       style={{ height: "500px", width: "100%" }}
       className="rounded-lg shadow"
     >
@@ -80,9 +106,8 @@ export default function MapView({ tripData }) {
         </Marker>
       )}
 
-      {/* Draw route using Polyline */}
-      {routeCoordinates.length > 0 && (
-        <Polyline positions={routeCoordinates} color="blue" />
+      {routeCoordinates.length > 1 && (
+        <Polyline positions={routeCoordinates} color="#2563eb" weight={5} opacity={0.9} />
       )}
     </MapContainer>
   );

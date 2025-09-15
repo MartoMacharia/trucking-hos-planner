@@ -1,70 +1,77 @@
-# Getting Started with Create React App
+# Trucking HOS Planner – Frontend (React)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React single-page application that lets drivers plan a trip and view Hours-of-Service (HOS) compliant ELD log sheets.
 
-## Available Scripts
+## Features
+- Trip input with location autocomplete (Nominatim) and browser geolocation
+- Interactive map (Leaflet + OpenStreetMap)
+- Client-side routed polyline using OpenRouteService (ORS)
+- Calls backend API for trip calculation and ELD sheet generation
+- Dedicated ELD Log screen that displays base64 images returned by the backend
 
-In the project directory, you can run:
+## Tech Stack
+- React (CRA)
+- react-leaflet + Leaflet
+- Tailwind-ready styles via existing CSS
+- OpenStreetMap tiles + OpenRouteService directions
 
-### `npm start`
+## Prerequisites
+- Node.js 18+
+- An OpenRouteService API key (free tier available)
+- Backend running locally or deployed (see backend README)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Environment Variables
+Create a file named `.env` in `frontend/` with:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```
+REACT_APP_API_BASE_URL=http://localhost:8000
+REACT_APP_ORS_API_KEY=YOUR_ORS_KEY
+```
 
-### `npm test`
+- `REACT_APP_API_BASE_URL` points to your Django server.
+- `REACT_APP_ORS_API_KEY` is used to fetch client-side routes.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Restart `npm start` after changing env vars.
 
-### `npm run build`
+## Install & Run (Local)
+```
+cd frontend
+npm install
+npm start
+```
+The app will open at `http://localhost:3000`.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Usage Tips
+- Start typing locations, then CLICK a suggestion to set coordinates. Text-only input will not draw routes.
+- After submitting the trip, click "View ELD Logs" to open the ELD screen.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Build
+```
+npm run build
+```
+Outputs a production build in `build/`.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Deploy (Vercel)
+1. Push the repo to GitHub.
+2. In Vercel, "New Project" → Import your repo → select `frontend/`.
+3. Framework Preset: Create React App (or leave Auto)
+4. Build command: `npm run build`
+5. Output directory: `build`
+6. Environment Variables:
+   - `REACT_APP_API_BASE_URL` → your backend URL (e.g. `https://your-api.onrender.com`)
+   - `REACT_APP_ORS_API_KEY` → your ORS key
+7. Deploy.
 
-### `npm run eject`
+## Folder Structure Highlights
+- `src/components/TripInputForm.jsx`: Inputs and address suggestions
+- `src/components/MapView.jsx`: Map, markers, route polyline (ORS)
+- `src/components/LogSheets.jsx`: Renders base64 ELD images
+- `src/services/api.js`: Calls the Django API
+- `src/services/orsService.js`: ORS geocoding and directions helper
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Troubleshooting
+- No route shown: ensure you selected suggestions, and `REACT_APP_ORS_API_KEY` is set. Check browser console for errors (401/403 means invalid key; 429 means rate limit).
+- CORS errors: add your frontend URL to `CORS_ALLOWED_ORIGINS` in backend settings.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## License
+For assessment/demo purposes. Replace with your preferred license as needed.
