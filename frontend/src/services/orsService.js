@@ -50,6 +50,8 @@ export async function getRoutePolyline(coords, profile = "driving-car") {
     body: JSON.stringify(body),
   });
 
+  console.log(`ORS Directions Response: ${response.status}, ${await response.text()}`);
+
   if (!response.ok) {
     throw new Error(`ORS API error: ${response.statusText}`);
   }
