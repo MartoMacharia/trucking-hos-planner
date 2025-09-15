@@ -15,6 +15,13 @@ export default function TripInputForm({ onTripSubmit }) {
     dropoffLocation: [],
   });
 
+  // Track which fields just had a suggestion selected
+  const [justSelected, setJustSelected] = useState({
+    currentLocation: false,
+    pickupLocation: false,
+    dropoffLocation: false,
+  });
+
   // Debounced search inputs
   const debouncedCurrent = useDebounce(formData.currentLocation.text);
   const debouncedPickup = useDebounce(formData.pickupLocation.text);
@@ -22,6 +29,12 @@ export default function TripInputForm({ onTripSubmit }) {
 
   useEffect(() => {
     const fetchSuggestions = async (name, query) => {
+      // Don't fetch if this field just had a suggestion selected
+      if (justSelected[name]) {
+        setJustSelected(prev => ({ ...prev, [name]: false }));
+        return;
+      }
+
       if (!query) {
         setSuggestions((prev) => ({ ...prev, [name]: [] }));
         return;
@@ -43,60 +56,11 @@ export default function TripInputForm({ onTripSubmit }) {
       }
     };
 
+    // Fetch suggestions for all three fields
     fetchSuggestions("currentLocation", debouncedCurrent);
-  }, [debouncedCurrent]);
-
-  useEffect(() => {
-    const fetchSuggestions = async (name, query) => {
-      if (!query) {
-        setSuggestions((prev) => ({ ...prev, [name]: [] }));
-        return;
-      }
-
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
-        )}&addressdetails=1&limit=5`;
-        const res = await fetch(url);
-        const data = await res.json();
-        const locations = data.map((item) => ({
-          label: item.display_name,
-          coords: [parseFloat(item.lon), parseFloat(item.lat)], // [lng, lat]
-        }));
-        setSuggestions((prev) => ({ ...prev, [name]: locations }));
-      } catch (err) {
-        console.error("Error fetching suggestions:", err);
-      }
-    };
-
     fetchSuggestions("pickupLocation", debouncedPickup);
-  }, [debouncedPickup]);
-
-  useEffect(() => {
-    const fetchSuggestions = async (name, query) => {
-      if (!query) {
-        setSuggestions((prev) => ({ ...prev, [name]: [] }));
-        return;
-      }
-
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
-        )}&addressdetails=1&limit=5`;
-        const res = await fetch(url);
-        const data = await res.json();
-        const locations = data.map((item) => ({
-          label: item.display_name,
-          coords: [parseFloat(item.lon), parseFloat(item.lat)], // [lng, lat]
-        }));
-        setSuggestions((prev) => ({ ...prev, [name]: locations }));
-      } catch (err) {
-        console.error("Error fetching suggestions:", err);
-      }
-    };
-
     fetchSuggestions("dropoffLocation", debouncedDropoff);
-  }, [debouncedDropoff]);
+  }, [debouncedCurrent, debouncedPickup, debouncedDropoff, justSelected]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -107,6 +71,8 @@ export default function TripInputForm({ onTripSubmit }) {
         ...formData,
         [name]: { text: value, coords: null },
       });
+      // Reset the justSelected flag when user types
+      setJustSelected(prev => ({ ...prev, [name]: false }));
     }
   };
 
@@ -116,6 +82,8 @@ export default function TripInputForm({ onTripSubmit }) {
       [name]: { text: suggestion.label, coords: suggestion.coords },
     });
     setSuggestions((prev) => ({ ...prev, [name]: [] })); // clear dropdown
+    // Mark this field as just having a suggestion selected
+    setJustSelected(prev => ({ ...prev, [name]: true }));
   };
 
   const handleUseCurrentLocation = () => {
